@@ -84,71 +84,45 @@
   </div>
 
   <script>
-    var speakBtn = document.getElementById('speakBtn');
-    var downloadBtn = document.getElementById('downloadBtn');
-    var textArea = document.getElementById('text');
-    var voiceSelect = document.getElementById('voiceSelect');
-    var audioPlayer = document.getElementById('audioPlayer');
-    var audioElement = document.getElementById('audioElement');
+utterance.onend = function() {
+  var audioBuffer = utterance.audioBuffer;
+  var audioContext = new AudioContext();
+  var audioSource = audioContext.createBufferSource();
+  audioSource.buffer = audioBuffer;
 
-    // Verificar si el navegador admite la síntesis de voz
-    if ('speechSynthesis' in window) {
-      speakBtn.disabled = false;
+  var destinationNode = audioContext.createMediaStreamDestination();
+  audioSource.connect(destinationNode);
+  audioSource.start();
 
-      // Obtener y mostrar las voces disponibles
-      function populateVoiceList() {
-        var voices = speechSynthesis.getVoices();
-        voiceSelect.innerHTML = '';
+  var mediaRecorder = new MediaRecorder(destinationNode.stream);
+  var audioChunks = [];
 
-        for (var i = 0; i < voices.length; i++) {
-          var option = document.createElement('option');
-          option.value = i;
-          option.textContent = voices[i].name + ' (' + voices[i].lang + ')';
+  mediaRecorder.ondataavailable = function(e) {
+    audioChunks.push(e.data);
+  };
 
-          voiceSelect.appendChild(option);
-        }
-      }
+  mediaRecorder.onstop = function() {
+    var audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+    var audioUrl = URL.createObjectURL(audioBlob);
 
-      populateVoiceList();
+    downloadBtn.style.display = 'inline'; // Mostrar el botón de descarga después de que se complete la síntesis de voz
+    audioPlayer.style.display = 'block'; // Mostrar el reproductor de audio después de que se complete la síntesis de voz
 
-      if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = populateVoiceList;
-      }
+    audioElement.src = audioUrl;
+    downloadBtn.onclick = function() {
+      var a = document.createElement('a');
+      a.href = audioUrl;
+      a.download = 'texto_a_voz.wav';
+      a.click();
+    };
+  };
 
-      speakBtn.addEventListener('click', function() {
-        var text = textArea.value;
-        var voiceIndex = voiceSelect.value;
-        var utterance = new SpeechSynthesisUtterance(text);
+  mediaRecorder.start();
+  setTimeout(function() {
+    mediaRecorder.stop();
+  }, 2000); // Establecer una duración para la grabación, en este caso, 2 segundos
+};
 
-        utterance.voice = speechSynthesis.getVoices()[voiceIndex];
-        utterance.volume = 1; // Volumen (0 a 1)
-        utterance.rate = 1; // Velocidad de reproducción (0.1 a 10)
-        utterance.pitch = 1; // Tono de voz (0 a 2)
-
-        speechSynthesis.speak(utterance);
-
-        // Evento que se dispara cuando la síntesis de voz se completa
-        utterance.onend = function() {
-          var audioBuffer = utterance.audioBuffer;
-          var blob = new Blob([audioBuffer], { type: 'audio/wav' });
-          var audioUrl = URL.createObjectURL(blob);
-
-          downloadBtn.style.display = 'inline'; // Mostrar el botón de descarga después de que se complete la síntesis de voz
-          audioPlayer.style.display = 'block'; // Mostrar el reproductor de audio después de que se complete la síntesis de voz
-
-          audioElement.src = audioUrl;
-          downloadBtn.onclick = function() {
-            var a = document.createElement('a');
-            a.href = audioUrl;
-            a.download = 'texto_a_voz.wav';
-            a.click();
-          };
-        };
-      });
-    } else {
-      speakBtn.disabled = true;
-      speakBtn.textContent = 'La síntesis de voz no es compatible con este navegador.';
-    }
   </script>
 </body>
 </html>
