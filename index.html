@@ -56,12 +56,10 @@
       width: 100%;
     }
 
-    .download-link {
+    .download-button {
       display: none;
       margin-top: 20px;
       font-size: 16px;
-      color: #337ab7;
-      text-decoration: none;
     }
 
     @media (max-width: 500px) {
@@ -82,12 +80,12 @@
     <div class="audio-player" id="audioPlayer">
       <audio id="audioElement" controls></audio>
     </div>
-    <a id="downloadLink" class="download-link" style="display: none;">Descargar audio</a>
+    <button id="downloadBtn" class="download-button" style="display: none;">Descargar audio</button>
   </div>
 
   <script>
     var speakBtn = document.getElementById('speakBtn');
-    var downloadLink = document.getElementById('downloadLink');
+    var downloadBtn = document.getElementById('downloadBtn');
     var textArea = document.getElementById('text');
     var voiceSelect = document.getElementById('voiceSelect');
     var audioPlayer = document.getElementById('audioPlayer');
@@ -131,13 +129,20 @@
 
         // Evento que se dispara cuando la síntesis de voz se completa
         utterance.onend = function() {
-          downloadLink.style.display = 'inline'; // Mostrar el enlace de descarga después de que se complete la síntesis de voz
-          audioPlayer.style.display = 'block'; // Mostrar el reproductor de audio después de que se complete la síntesis de voz
-          var blob = new Blob([new XMLSerializer().serializeToString(utterance)], { type: 'audio/wav' });
+          var audioBuffer = utterance.audioBuffer;
+          var blob = new Blob([audioBuffer], { type: 'audio/wav' });
           var audioUrl = URL.createObjectURL(blob);
+
+          downloadBtn.style.display = 'inline'; // Mostrar el botón de descarga después de que se complete la síntesis de voz
+          audioPlayer.style.display = 'block'; // Mostrar el reproductor de audio después de que se complete la síntesis de voz
+
           audioElement.src = audioUrl;
-          downloadLink.href = audioUrl;
-          downloadLink.download = 'texto_a_voz.wav';
+          downloadBtn.onclick = function() {
+            var a = document.createElement('a');
+            a.href = audioUrl;
+            a.download = 'texto_a_voz.wav';
+            a.click();
+          };
         };
       });
     } else {
