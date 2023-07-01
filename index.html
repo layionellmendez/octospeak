@@ -80,7 +80,7 @@
     <select id="voiceSelect" class="voice-select"></select>
     <button id="speakBtn">Leer en voz alta</button>
     <div class="audio-player" id="audioPlayer">
-      <audio controls></audio>
+      <audio id="audioElement" controls></audio>
     </div>
     <a id="downloadLink" class="download-link" style="display: none;">Descargar audio</a>
   </div>
@@ -91,6 +91,7 @@
     var textArea = document.getElementById('text');
     var voiceSelect = document.getElementById('voiceSelect');
     var audioPlayer = document.getElementById('audioPlayer');
+    var audioElement = document.getElementById('audioElement');
 
     // Verificar si el navegador admite la síntesis de voz
     if ('speechSynthesis' in window) {
@@ -99,6 +100,7 @@
       // Obtener y mostrar las voces disponibles
       function populateVoiceList() {
         var voices = speechSynthesis.getVoices();
+        voiceSelect.innerHTML = '';
 
         for (var i = 0; i < voices.length; i++) {
           var option = document.createElement('option');
@@ -133,7 +135,7 @@
           audioPlayer.style.display = 'block'; // Mostrar el reproductor de audio después de que se complete la síntesis de voz
           var blob = new Blob([new XMLSerializer().serializeToString(utterance)], { type: 'audio/wav' });
           var audioUrl = URL.createObjectURL(blob);
-          audioPlayer.querySelector('audio').src = audioUrl;
+          audioElement.src = audioUrl;
           downloadLink.href = audioUrl;
           downloadLink.download = 'texto_a_voz.wav';
         };
