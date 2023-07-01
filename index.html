@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>OctoSpeak</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .title {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+
+    .textarea-container {
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 20px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+    }
+
+    .voice-select {
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+
+    .audio-player {
+      margin-top: 20px;
+      display: none;
+    }
+
+    .audio-player audio {
+      width: 100%;
+    }
+
+    .download-link {
+      display: none;
+      margin-top: 20px;
+      font-size: 16px;
+      color: #337ab7;
+      text-decoration: none;
+    }
+
+    @media (max-width: 500px) {
+      .container {
+        margin-top: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">OctoSpeak</h1>
+    <div class="textarea-container">
+      <textarea id="text" placeholder="Escribe el texto aquí" rows="4" cols="50"></textarea>
+    </div>
+    <select id="voiceSelect" class="voice-select"></select>
+    <button id="speakBtn">Leer en voz alta</button>
+    <div class="audio-player" id="audioPlayer">
+      <audio controls></audio>
+    </div>
+    <a id="downloadLink" class="download-link" style="display: none;">Descargar audio</a>
+  </div>
+
+  <script>
+    var speakBtn = document.getElementById('speakBtn');
+    var downloadLink = document.getElementById('downloadLink');
+    var textArea = document.getElementById('text');
+    var voiceSelect = document.getElementById('voiceSelect');
+    var audioPlayer = document.getElementById('audioPlayer');
+
+    // Verificar si el navegador admite la síntesis de voz
+    if ('speechSynthesis' in window) {
+      speakBtn.disabled = false;
+
+      // Obtener y mostrar las voces disponibles
+      function populateVoiceList() {
+        var voices = speechSynthesis.getVoices();
+
+        for (var i = 0; i < voices.length; i++) {
+          var option = document.createElement('option');
+          option.value = i;
+          option.textContent = voices[i].name + ' (' + voices[i].lang + ')';
+
+          voiceSelect.appendChild(option);
+        }
+      }
+
+      populateVoiceList();
+
+      if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = populateVoiceList;
+      }
+
+      speakBtn.addEventListener('click', function() {
+        var text = textArea.value;
+        var voiceIndex = voiceSelect.value;
+        var utterance = new SpeechSynthesisUtterance(text);
+
+        utterance.voice = speechSynthesis.getVoices()[voiceIndex];
+        utterance.volume = 1; // Volumen (0 a 1)
+        utterance.rate = 1; // Velocidad de reproducción (0.1 a 10)
+        utterance.pitch = 1; // Tono de voz (0 a 2)
+
+        speechSynthesis.speak(utterance);
+
+        // Evento que se dispara cuando la síntesis de voz se completa
+        utterance.onend = function() {
+          downloadLink.style.display = 'inline'; // Mostrar el enlace de descarga después de que se complete la síntesis de voz
+          audioPlayer.style.display = 'block'; // Mostrar el reproductor de audio después de que se complete la síntesis de voz
+          var blob = new Blob([new XMLSerializer().serializeToString(utterance)], { type: 'audio/wav' });
+          var audioUrl = URL.createObjectURL(blob);
+          audioPlayer.querySelector('audio').src = audioUrl;
+          downloadLink.href = audioUrl;
+          downloadLink.download = 'texto_a_voz.wav';
+        };
+      });
+    } else {
+      speakBtn.disabled = true;
+      speakBtn.textContent = 'La síntesis de voz no es compatible con este navegador.';
+    }
+  </script>
+</body>
+</html>
