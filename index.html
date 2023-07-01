@@ -128,10 +128,8 @@
 
         utterance.onend = function() {
           var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          var dest = audioCtx.createMediaStreamDestination();
-          utterance.connect(dest);
-
-          var mediaRecorder = new MediaRecorder(dest.stream);
+          var mediaStreamDestination = audioCtx.createMediaStreamDestination();
+          var mediaRecorder = new MediaRecorder(mediaStreamDestination.stream);
           var audioChunks = [];
 
           mediaRecorder.ondataavailable = function(e) {
@@ -154,10 +152,13 @@
             };
           };
 
-          mediaRecorder.start();
-          setTimeout(function() {
+          utterance.addEventListener('audiostart', function() {
+            mediaRecorder.start();
+          });
+
+          utterance.addEventListener('audioend', function() {
             mediaRecorder.stop();
-          }, 2000); // Establecer una duración para la grabación, en este caso, 2 segundos
+          });
         };
       });
     } else {
